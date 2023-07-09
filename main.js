@@ -47,7 +47,7 @@ function createMesh(color){
     return new THREE.MeshBasicMaterial({ color: color });
 }
 
-const wall = new THREE.MeshBasicMaterial({color: 0x808080, side: THREE.DoubleSide});
+const wall = new THREE.MeshBasicMaterial({color: 0xfdcc0d, side: THREE.DoubleSide});
 const transparentWall = new THREE.MeshBasicMaterial({transparent: true, opacity: 0});
 // const matPathBox = [
 //     new THREE.MeshBasicMaterial({color: 0xffffff, side: THREE.DoubleSide}), //left side
@@ -68,7 +68,27 @@ const setDirectionCube = {
     deadEnd: [true, true, false, false, true, false]
 }
 
+const wallDirectionCube = {
+    left: 0,
+    right: 1,
+    up: 4,
+    down:5,
+}
+
+function createWallMesh(color, material){
+    const wallColored = new THREE.MeshBasicMaterial({color, side: THREE.DoubleSide});
+    let matArray = []
+    for (let index = 0; index < setDirectionCube[material].length; index++) {
+        const element = setDirectionCube[material][index];
+        let side = element ? wallColored : transparentWall;
+        matArray.push(side)
+    }
+    return matArray
+}
+
+
 const geoPathBox = new THREE.BoxGeometry( 1, 1, 1 ); 
+
 function getRandomArbitrary(max, min) {
     if(!min){
         min = 0;
@@ -161,6 +181,24 @@ function generatePosibleBlocks(block) {
     return newBlocks
 }
 
+function checkAdjacentWalls(block) {
+    let newBlocks = []
+    let coordBlocks = [
+        [block?.position.x + 1, block?.position.z],
+        [block?.position.x - 1, block?.position.z],
+        [block?.position.x, block?.position.z + 1],
+        [block?.position.x, block?.position.z - 1]
+    ]
+    coordBlocks = coordBlocks.filter(b => (b[0] < (blocks - 0.5) && b[0] > 0.5) && (b[1] < (blocks - 0.5) && b[1] > 0.5))
+    coordBlocks.forEach(b => {
+        let pastBlocks = wallMesh.children.find(block =>block?.position.x === b[0] &&  block?.position.z === b[1])
+        if(pastBlocks){
+            newBlocks.push(b)
+        }
+    })
+    return newBlocks
+}
+
 function generatePath(lastBlock,newBlocks, length){
     let point = getRandomArbitrary(newBlocks.length - 1);
     let pointBlock = {
@@ -174,6 +212,7 @@ function generatePath(lastBlock,newBlocks, length){
 function generateWalls(pathMesh, lastBlock, length){
     //check the direction of the next and previous
     if(length > 0){
+        let blockedWall =false;
         let previousBlock = pathMesh[length-1]
         let nextBlock = pathMesh[length+1]
         //indicates enter side
@@ -187,12 +226,36 @@ function generateWalls(pathMesh, lastBlock, length){
             x: nextBlock.position.x - lastBlock.position.x,
             z: nextBlock.position.z - lastBlock.position.z
         }
-
-        //check if already exist wall
-        let wallExist = wallMesh.children.find(b => b.position.x == previousBlock.position.x && b.position.z == previousBlock.position.z)
-        if(wallExist){
-            console.log('foundWall', previousBlock.position, lastBlock.position);
+        let posibleBlocks = checkAdjacentWalls(lastBlock)
+        if(posibleBlocks){
+            let a = false
+            let pastBlocks = []
+            posibleBlocks.forEach(b =>{
+                if(previousBlock.position.x == b[0] && previousBlock.position.z == b[1]){
+                    a = true;
+                } else {
+                    let block = wallMesh.children.find(block =>block?.position.x === b[0] &&  block?.position.z === b[1])
+                    if(block){
+                        pastBlocks.push(block)
+                    }
+                }
+            })
+            if(!a){
+                // console.log("Sin conexion con el anterior");
+                // console.log(pastBlocks);
+                if (pastBlocks.length > 0) {
+                    blockedWall = true;
+                    let point = getRandomArbitrary(pastBlocks.length - 1)
+                    previousBlock = pastBlocks[point];
+                    //indicates enter side
+                    coordPRev = {
+                        x: lastBlock.position.x - previousBlock.position.x,
+                        z: lastBlock.position.z - previousBlock.position.z
+                    }
+                }
+            }
         }
+
         //set Enter side
         //                  z
         //                  |
@@ -257,7 +320,10 @@ function generateWalls(pathMesh, lastBlock, length){
             x: lastBlock.position.x,
             z: lastBlock.position.z
         }
-        generateWallBlock(pointBlock, 'wall' + length, wallCreated);
+        generateWallBlock(pointBlock, 'wall-' +wallCreated+ '-' + length, wallCreated);
+        if(blockedWall){
+            removeBlockedWalls(previousBlock, lastBlock)
+        }
     } else {
         let directionWall = ''
         if(lastBlock.position.x == 0.5 || lastBlock.position.x == (blocks-0.5)){
@@ -270,9 +336,70 @@ function generateWalls(pathMesh, lastBlock, length){
             x: lastBlock.position.x,
             z: lastBlock.position.z
         }
-        generateWallBlock(pointBlock, 'wall' + length, directionWall);
+        generateWallBlock(pointBlock, 'initialWall-'+directionWall, directionWall);
     }
+}
 
+function removeBlockedWalls(block, nextBlock) {
+    // console.log(block.name.includes('updated'));
+    // if(block.name.includes('updated')){
+    //     return;
+    // }
+    // // indicates exit side
+    // let coordNext = {
+    //     x: nextBlock.position.x - block.position.x,
+    //     z: nextBlock.position.z - block.position.z
+    // }
+    // let exitSide = '';
+    // let enterSide = '';
+    // if(coordNext.x === 0){
+    //     if(coordNext.z > 0){
+    //         exitSide = 'up'
+    //         enterSide = 'down'
+    //     } else {
+    //         exitSide = 'down'
+    //         enterSide = 'up'
+    //     }
+    // } else {
+    //     if(coordNext.x > 0){
+    //         exitSide = 'left' 
+    //         enterSide = 'right'
+    //     } else {
+    //         exitSide = 'right'
+    //         enterSide = 'left'
+    //     }
+    // }
+
+    // let walls = block.name.split('-');
+    // let numberExit = wallDirectionCube[exitSide]
+    // let numberEnter = wallDirectionCube[enterSide]
+    // let matArrayExit = block.material;
+    // let matArrayEnter = nextBlock.material;
+    // matArrayExit[numberExit] = transparentWall;
+    // matArrayEnter[numberEnter] = transparentWall;
+
+    // block.material = matArrayExit;
+    // nextBlock.material = matArrayExit;
+
+
+
+
+
+
+    // let newMeshExit = new THREE.Mesh(geoPathBox, matArrayExit)
+    // newMeshExit.position.set(block.position.x, 0.5, block.position.z);
+    // newMeshExit.name = walls.join('-')
+    // wallMesh.remove(block);
+    // wallMesh.add(newMeshExit);
+
+
+    // let newMeshEnter = new THREE.Mesh(geoPathBox, matArrayEnter)
+    // newMeshEnter.position.set(nextBlock.position.x, 0.5, nextBlock.position.z);
+    // newMeshEnter.name = walls.join('-')
+    // wallMesh.remove(nextBlock);
+    // wallMesh.add(newMeshEnter);
+    // scene.add(wallMesh)
+    // toggleInterval()
 }
 
 function startMaze(){
@@ -300,39 +427,45 @@ function startMaze(){
                 }
             }
             if(lengthPath >= 2){
+                wallMesh.children.forEach(element => {
+                    let material =element.name.split('-')
+                    var cloned = createWallMesh(0x808080, material[1]);
+                    element.material = cloned;
+                });
                 generateWalls(pathMesh.children,pathMesh.children[lengthPath-2], lengthPath-2)
             }
             
         } else {
             let posibleBlocks = generatePosibleBlocks(pathMesh.children[index])
             generatePath(pathMesh.children[index],posibleBlocks, lengthPath)
-            // insertInitialPoint();
         }
     } else {
-        clearInterval(refreshIntervalId);
+        // console.log(wallMesh.children.filter(b => b.name.includes('updated')));
+        toggleInterval()
     }
 
     
 }
 
+insertInitialPoint();
+var time = 100
+var refreshIntervalId
+function toggleInterval() { 
+    if(refreshIntervalId){ 
+        clearInterval(refreshIntervalId);
+        refreshIntervalId = null;
+        // findDuplicates();
+        console.log(wallMesh.children);
+    } else {
+        refreshIntervalId = setInterval(function(){
+            startMaze();
+        },time)
+    }
 
-function findDuplicates(){
-    pathMesh.children.forEach((a, indexA) => {
-        pathMesh.children.forEach((b, indexB) => {
-           if(a.position.x === b.position.x && a.position.z === b.position.z && indexA !== indexB){
-            console.log("duplicado", {name: a.name, position: a.position}, {name: b.name, position: b.position});
-           }
-        });
-    });
+    refreshIntervalId
 }
 
-insertInitialPoint();
-var time = 500
-var refreshIntervalId  = setInterval(function(){
-    startMaze();
-},time)
-refreshIntervalId
-
+toggleInterval()
 document.body.appendChild( renderer.domElement );
 function animate(time) {
     
@@ -350,16 +483,21 @@ window.addEventListener('resize', function () {
 
 window.addEventListener('keydown', function (e) {
     if(e.code =='Space') {
-        if(refreshIntervalId){ 
-            clearInterval(refreshIntervalId);
-            refreshIntervalId = null;
-            findDuplicates();
-        } else {
-            console.log('hola');
-            refreshIntervalId = setInterval(function(){
-                startMaze();
-            },time)
-        }
+        toggleInterval()
+    }
+    
+})
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+let intersects = [];
+window.addEventListener('click', function (e) {
+    pointer.x = ( e.clientX / window.innerWidth ) * 2 - 1;
+    pointer.y = - ( e.clientY / window.innerHeight ) * 2 + 1;
+    raycaster.setFromCamera( pointer, camera );
+    intersects = raycaster.intersectObjects(scene.children, true);
+    if (intersects.length > 0){
+        let i0 = intersects[0];
+        console.log(i0.object);
     }
     
 })
