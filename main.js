@@ -47,7 +47,7 @@ function createMesh(color){
     return new THREE.MeshBasicMaterial({ color: color });
 }
 
-const wall = new THREE.MeshBasicMaterial({color: 0xfdcc0d, side: THREE.DoubleSide});
+const wall = new THREE.MeshBasicMaterial({color: 0x808080, side: THREE.DoubleSide});
 const transparentWall = new THREE.MeshBasicMaterial({transparent: true, opacity: 0});
 // const matPathBox = [
 //     new THREE.MeshBasicMaterial({color: 0xffffff, side: THREE.DoubleSide}), //left side
@@ -65,7 +65,12 @@ const setDirectionCube = {
     upRight:[true, false, false, false, false, true],
     downLeft: [false, true, false, false, true, false],
     upLeft: [false, true, false, false, false, true],
-    deadEnd: [true, true, false, false, true, false]
+    deadEnd: [true, true, false, false, true, false],
+    //just for the external wall
+    right: [false, true, false, false, false, false],
+    left: [true, false, false, false, false, false],
+    up: [false, false, false, false, true, false],
+    down: [false, false, false, false, false,  true]
 }
 
 const wallDirectionCube = {
@@ -109,19 +114,7 @@ function insertInitialPoint(){
         p[0] = p[0] === blocks ? p[0] - 0.5 : p[0] + 0.5;
         p[1] = p[1] === blocks ? p[1] - 0.5 : p[1] + 0.5
     })
-    posiblePoints = posiblePoints.filter(b => {
-        if(b[1] !== b[0]){
-            return true;
-        } else {
-
-            if(b[1] >= (blocks - 0.5) && b[0] !== 0.5){
-                return true;
-            } else if(b[0] >= (blocks - 0.5) && b[1] !== 0.5){
-                return true;
-            }
-        }
-        return false;
-    })
+    posiblePoints = posiblePoints.filter(b => b[1] !== b[0] && (b[1] +b[0] !== blocks))
     let point = getRandomArbitrary(posiblePoints.length - 1)
     let x = posiblePoints[point][0];
     let z = posiblePoints[point][1];
@@ -340,7 +333,7 @@ function generateWalls(pathMesh, lastBlock, length){
     }
 }
 
-function removeBlockedWalls(block, nextBlock) {
+function removeBlockedWalls(block) {
     // console.log(block.name.includes('updated'));
     // if(block.name.includes('updated')){
     //     return;
@@ -370,42 +363,61 @@ function removeBlockedWalls(block, nextBlock) {
     //     }
     // }
 
-    // let walls = block.name.split('-');
-    // let numberExit = wallDirectionCube[exitSide]
-    // let numberEnter = wallDirectionCube[enterSide]
-    // let matArrayExit = block.material;
-    // let matArrayEnter = nextBlock.material;
-    // matArrayExit[numberExit] = transparentWall;
-    // matArrayEnter[numberEnter] = transparentWall;
-
-    // block.material = matArrayExit;
-    // nextBlock.material = matArrayExit;
-
-
-
-
-
-
-    // let newMeshExit = new THREE.Mesh(geoPathBox, matArrayExit)
-    // newMeshExit.position.set(block.position.x, 0.5, block.position.z);
-    // newMeshExit.name = walls.join('-')
-    // wallMesh.remove(block);
-    // wallMesh.add(newMeshExit);
-
-
-    // let newMeshEnter = new THREE.Mesh(geoPathBox, matArrayEnter)
-    // newMeshEnter.position.set(nextBlock.position.x, 0.5, nextBlock.position.z);
-    // newMeshEnter.name = walls.join('-')
-    // wallMesh.remove(nextBlock);
-    // wallMesh.add(newMeshEnter);
-    // scene.add(wallMesh)
+    wallMesh.remove(block);
+    scene.add(wallMesh)
     // toggleInterval()
+}
+
+function setExternalWall() { 
+    let maxBlock = blocks-0.5
+    for(let i=0.5 ;i<= maxBlock; i++){
+        let position =pathMesh.children[0].position
+        let wallsCoord = [
+            {
+                x: i,
+                z: blocks-0.5,
+                side: 'up',
+                nameWall: 'Wall-up-X-',
+                namePath: 'Block-X-',
+            },
+            {
+                x: i,
+                z: 0.5,
+                side: 'down',
+                nameWall: 'Wall-down-MirrorX-',
+                namePath: 'Block-MirrorX-',
+            },
+            {
+                x: blocks-0.5,
+                z: i,
+                side: 'left',
+                nameWall: 'Wall-left-Z-',
+                namePath: 'Block-Z-',
+            },
+            {
+                x: 0.5,
+                z: i,
+                side: 'right',
+                nameWall: 'Wall-right-MirrorZ-',
+                namePath: 'Block-MirrorZ-',
+            }
+        ]
+
+        wallsCoord.forEach(c =>{
+            if(!(c.x === position.x && c.z ===position.z)){
+                generatePathBlock(c, 'external'+ c.namePath +i )
+                generateWallBlock(c, 'external'+ c.nameWall + i, c.side);
+            }
+            
+        });
+    }
 }
 
 function startMaze(){
     let lengthPath = pathMesh.children.length;
     let lengthWall = wallMesh.children.length
-    if(lengthWall !== ((blocks - 2) * (blocks - 2) + 1)){
+    // if(lengthWall !== ((blocks - 2) * (blocks - 2) + 1)){
+    if(lengthWall !== (blocks* blocks)){
     // if(lengthPath !== ((blocks - 2) * (blocks - 2) + 1)){
     // if(lengthPath <= 4){
         let foundBlock = false;
@@ -440,25 +452,27 @@ function startMaze(){
             generatePath(pathMesh.children[index],posibleBlocks, lengthPath)
         }
     } else {
-        // console.log(wallMesh.children.filter(b => b.name.includes('updated')));
-        toggleInterval()
+        // setExternalWall();
     }
 
     
 }
 
 insertInitialPoint();
-var time = 100
+var time = 10
 var refreshIntervalId
 function toggleInterval() { 
     if(refreshIntervalId){ 
         clearInterval(refreshIntervalId);
         refreshIntervalId = null;
-        // findDuplicates();
-        console.log(wallMesh.children);
     } else {
         refreshIntervalId = setInterval(function(){
-            startMaze();
+            if(wallMesh.children.length !== (blocks* blocks)){
+                startMaze();
+            } else {
+                setExternalWall();
+                clearInterval(refreshIntervalId);
+            }
         },time)
     }
 
