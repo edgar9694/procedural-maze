@@ -40,13 +40,12 @@ hightlightMesh.position.set(planePosition,0,planePosition)
 
 const axesHelper = new THREE.AxesHelper( 5 );
 scene.add( axesHelper );
-// var initialPoint = [-18, 25];
-// let arrayMaze = [];
 
 function createMesh(color){
     return new THREE.MeshBasicMaterial({ color: color });
 }
 
+const geoPathBox = new THREE.BoxGeometry( 1, 1, 1 ); 
 const wall = new THREE.MeshBasicMaterial({color: 0x808080, side: THREE.DoubleSide});
 const transparentWall = new THREE.MeshBasicMaterial({transparent: true, opacity: 0});
 // const matPathBox = [
@@ -73,13 +72,6 @@ const setDirectionCube = {
     down: [false, false, false, false, false,  true]
 }
 
-const wallDirectionCube = {
-    left: 0,
-    right: 1,
-    up: 4,
-    down:5,
-}
-
 function createWallMesh(color, material){
     const wallColored = new THREE.MeshBasicMaterial({color, side: THREE.DoubleSide});
     let matArray = []
@@ -91,8 +83,6 @@ function createWallMesh(color, material){
     return matArray
 }
 
-
-const geoPathBox = new THREE.BoxGeometry( 1, 1, 1 ); 
 
 function getRandomArbitrary(max, min) {
     if(!min){
@@ -481,11 +471,7 @@ function toggleInterval() {
 
 toggleInterval()
 document.body.appendChild( renderer.domElement );
-function animate(time) {
-    
-    // if(Math.floor(time/1000) % 2 == 0){
-        // generatePath();
-    // }
+function animate() {
 	renderer.render( scene, camera );
 }  
 
