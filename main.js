@@ -47,7 +47,7 @@ function createMesh(color){
     return new THREE.MeshBasicMaterial({ color: color });
 }
 
-const wall = new THREE.MeshBasicMaterial({color: 0xffffff, side: THREE.DoubleSide});
+const wall = new THREE.MeshBasicMaterial({color: 0x808080, side: THREE.DoubleSide});
 const transparentWall = new THREE.MeshBasicMaterial({transparent: true, opacity: 0});
 // const matPathBox = [
 //     new THREE.MeshBasicMaterial({color: 0xffffff, side: THREE.DoubleSide}), //left side
@@ -124,7 +124,6 @@ function generatePathBlock(point, name){
 var wallMesh = new THREE.Group(); 
 function generateWallBlock(point, name, material) {
     let matArray = []
-    console.log(material);
     for (let index = 0; index < setDirectionCube[material].length; index++) {
         const element = setDirectionCube[material][index];
         let side = element ? wall : transparentWall;
@@ -189,6 +188,11 @@ function generateWalls(pathMesh, lastBlock, length){
             z: nextBlock.position.z - lastBlock.position.z
         }
 
+        //check if already exist wall
+        let wallExist = wallMesh.children.find(b => b.position.x == previousBlock.position.x && b.position.z == previousBlock.position.z)
+        if(wallExist){
+            console.log('foundWall', previousBlock.position, lastBlock.position);
+        }
         //set Enter side
         //                  z
         //                  |
@@ -274,8 +278,8 @@ function generateWalls(pathMesh, lastBlock, length){
 function startMaze(){
     let lengthPath = pathMesh.children.length;
     let lengthWall = wallMesh.children.length
-    // if(lengthWall !== ((blocks - 2) * (blocks - 2) + 1)){
-    if(lengthPath !== ((blocks - 2) * (blocks - 2) + 1)){
+    if(lengthWall !== ((blocks - 2) * (blocks - 2) + 1)){
+    // if(lengthPath !== ((blocks - 2) * (blocks - 2) + 1)){
     // if(lengthPath <= 4){
         let foundBlock = false;
         let index = lengthPath-1
@@ -323,21 +327,18 @@ function findDuplicates(){
 }
 
 insertInitialPoint();
-var time = 100
-
-document.body.appendChild( renderer.domElement );
+var time = 500
 var refreshIntervalId  = setInterval(function(){
     startMaze();
 },time)
-
 refreshIntervalId
 
+document.body.appendChild( renderer.domElement );
 function animate(time) {
     
     // if(Math.floor(time/1000) % 2 == 0){
         // generatePath();
     // }
-    console.log(camera.position);
 	renderer.render( scene, camera );
 }  
 
