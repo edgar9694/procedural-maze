@@ -1,51 +1,51 @@
 import *  as THREE from 'three';
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls';
+import { OrbitControls  } from 'three/examples/jsm/controls/OrbitControls.js';
+
+// import * as firstPerson from "./first-person";
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
 
 
 const scene = new THREE.Scene();
-// scene.background = new THREE.Color(0xa8def0)
+scene.background = new THREE.Color(0xa8def0)
+scene.fog = new THREE.Fog(0xffffff, 0, 750);
 
-const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1000 );
+// const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1000 );
 // camera.position.y = 10;
-camera.position.set(9, 31, -5);
-
+// camera.position.set(9, 31, -5);
 let blocks = 20;
-let planePosition = (blocks/2) //+ 0.5;
-
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(blocks/2,0,blocks/2);
-// these two values basically smooth the movement animation
-controls.dampingFactor = 0.05;
-controls.enableDamping = true;
+let sizeLab = 20;
 
 
-
-const grid = new THREE.GridHelper(blocks, blocks);
+let fixCoord = (blocks/2);
+let planePosition = blocks == sizeLab ? (blocks*sizeLab/2) : (blocks*sizeLab/2) //+ 0.5;
+let sizeGrid =blocks == sizeLab ?  blocks * sizeLab: blocks* blocks;
+const grid = new THREE.GridHelper(sizeGrid, sizeLab);
 grid.position.set(planePosition,0,planePosition)
 scene.add(grid);
 
 const hightlightMesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(1,1),
+    new THREE.PlaneGeometry(sizeLab,sizeLab),
     new THREE.MeshBasicMaterial({
         side: THREE.DoubleSide,
-        // transparent: true
+        transparent: true
     })
 );
 
 hightlightMesh.rotateX(-Math.PI / 2);
 hightlightMesh.position.set(planePosition,0,planePosition)
+// scene.add( hightlightMesh );
 
-const axesHelper = new THREE.AxesHelper( 5 );
+const axesHelper = new THREE.AxesHelper( sizeLab );
 scene.add( axesHelper );
 
-function createMesh(color){
+function createMesh(color:any){
     return new THREE.MeshBasicMaterial({ color: color });
 }
 
-const geoPathBox = new THREE.BoxGeometry( 1, 1, 1 ); 
+const geoPathBox = new THREE.BoxGeometry( sizeLab, sizeLab, sizeLab ); 
 const wall = new THREE.MeshBasicMaterial({color: 0x808080, side: THREE.DoubleSide});
 const transparentWall = new THREE.MeshBasicMaterial({transparent: true, opacity: 0});
 // const matPathBox = [
@@ -57,7 +57,7 @@ const transparentWall = new THREE.MeshBasicMaterial({transparent: true, opacity:
 //     new THREE.MeshBasicMaterial({transparent: true, opacity: 0}), // back side
 // ];
 
-const setDirectionCube = {
+const setDirectionCube: { [key: string]: Array<boolean>} = {
     straightVertical: [true, true, false, false, false, false],
     straightHorizontal: [false, false, false, false, true, true],
     downRight: [true, false, false, false, true, false],
@@ -72,19 +72,24 @@ const setDirectionCube = {
     down: [false, false, false, false, false,  true]
 }
 
-function createWallMesh(color, material){
-    const wallColored = new THREE.MeshBasicMaterial({color, side: THREE.DoubleSide});
-    let matArray = []
-    for (let index = 0; index < setDirectionCube[material].length; index++) {
-        const element = setDirectionCube[material][index];
-        let side = element ? wallColored : transparentWall;
-        matArray.push(side)
-    }
-    return matArray
+function retrieveCoord(block: THREE.Object3D){
+    return [
+        [block?.position.x + sizeLab, block?.position.z],
+        [block?.position.x - sizeLab, block?.position.z],
+        [block?.position.x, block?.position.z + sizeLab],
+        [block?.position.x, block?.position.z - sizeLab]
+    ]
 }
 
+function limitConditions(b: Array<number>, condition: 'external' | 'internal'){
+    if(condition == 'external'){
+        return b[1] !== b[0] && (b[1] +b[0] !== sizeGrid);
+    } else {
+        return (b[0] < (sizeGrid - fixCoord) && b[0] > fixCoord) && (b[1] < (sizeGrid - fixCoord) && b[1] > fixCoord)
+    }
+}
 
-function getRandomArbitrary(max, min) {
+function getRandomArbitrary(max: number, min?: number) {
     if(!min){
         min = 0;
     }
@@ -95,16 +100,16 @@ function getRandomArbitrary(max, min) {
 // set the first point manually
 function insertInitialPoint(){
     let posiblePoints = [
-        [0, getRandomArbitrary(blocks)],
-        [getRandomArbitrary(blocks), 0],
-        [blocks, getRandomArbitrary(blocks)],
-        [getRandomArbitrary(blocks), blocks]
+        [0, getRandomArbitrary(blocks) * sizeLab],
+        [getRandomArbitrary(blocks) * sizeLab, 0],
+        [blocks*sizeLab, getRandomArbitrary(blocks) *sizeLab],
+        [getRandomArbitrary(blocks) *sizeLab, blocks *sizeLab]
     ]
     posiblePoints.forEach(p =>{
-        p[0] = p[0] === blocks ? p[0] - 0.5 : p[0] + 0.5;
-        p[1] = p[1] === blocks ? p[1] - 0.5 : p[1] + 0.5
-    })
-    posiblePoints = posiblePoints.filter(b => b[1] !== b[0] && (b[1] +b[0] !== blocks))
+        p[0] = p[0] === sizeGrid ? p[0] - fixCoord : p[0] + fixCoord;
+        p[1] = p[1] === sizeGrid ? p[1] - fixCoord : p[1] + fixCoord
+    })    
+    posiblePoints = posiblePoints.filter(b => limitConditions(b, 'external'))
     let point = getRandomArbitrary(posiblePoints.length - 1)
     let x = posiblePoints[point][0];
     let z = posiblePoints[point][1];
@@ -114,7 +119,7 @@ function insertInitialPoint(){
 
 
 var pathMesh = new THREE.Group(); 
-function generatePathBlock(point, name){
+function generatePathBlock(point: {x: number,z: number}, name: string){
     let newMesh = hightlightMesh.clone();
     newMesh.material = createMesh(0x008000)
     newMesh.position.set(point.x, 0, point.z);
@@ -125,7 +130,7 @@ function generatePathBlock(point, name){
 }
 
 var wallMesh = new THREE.Group(); 
-function generateWallBlock(point, name, material) {
+function generateWallBlock(point: {x: number,z: number}, name: string, material: string) {
     let matArray = []
     for (let index = 0; index < setDirectionCube[material].length; index++) {
         const element = setDirectionCube[material][index];
@@ -133,23 +138,18 @@ function generateWallBlock(point, name, material) {
         matArray.push(side)
     }
     let newMesh = new THREE.Mesh(geoPathBox,matArray)
-    newMesh.position.set(point.x, 0.5, point.z);
+    newMesh.position.set(point.x, sizeLab/2, point.z);
     newMesh.name = name
     wallMesh.add(newMesh);
     scene.add(wallMesh);
 }
 
-function generatePosibleBlocks(block) {
-    let newBlocks = []
-    let coordBlocks = [
-        [block?.position.x + 1, block?.position.z],
-        [block?.position.x - 1, block?.position.z],
-        [block?.position.x, block?.position.z + 1],
-        [block?.position.x, block?.position.z - 1]
-    ]
-    coordBlocks = coordBlocks.filter(b => (b[0] < (blocks - 0.5) && b[0] > 0.5) && (b[1] < (blocks - 0.5) && b[1] > 0.5))
+function generatePosibleBlocks(block: THREE.Object3D) {
+    let newBlocks:Array<Array<number>> = []
+    let coordBlocks = retrieveCoord(block)
+    coordBlocks = coordBlocks.filter(b => limitConditions(b,'internal'))    
     if(block?.name == 'initialBlock'){
-        if(block?.position.x == (blocks - 0.5) || block?.position.x == (0.5)){
+        if(block?.position.x == (sizeGrid - fixCoord) || block?.position.x == (fixCoord)){
             coordBlocks = coordBlocks.filter(b => (b[0] !== block?.position.x))
         } else {
             coordBlocks = coordBlocks.filter(b => (b[1] !== block?.position.z))
@@ -164,15 +164,10 @@ function generatePosibleBlocks(block) {
     return newBlocks
 }
 
-function checkAdjacentWalls(block) {
-    let newBlocks = []
-    let coordBlocks = [
-        [block?.position.x + 1, block?.position.z],
-        [block?.position.x - 1, block?.position.z],
-        [block?.position.x, block?.position.z + 1],
-        [block?.position.x, block?.position.z - 1]
-    ]
-    coordBlocks = coordBlocks.filter(b => (b[0] < (blocks - 0.5) && b[0] > 0.5) && (b[1] < (blocks - 0.5) && b[1] > 0.5))
+function checkAdjacentWalls(block: THREE.Object3D) {
+    let newBlocks: Array<Array<number>> = [] = []
+    let coordBlocks = retrieveCoord(block)
+    coordBlocks = coordBlocks.filter(b => limitConditions(b,'internal'))
     coordBlocks.forEach(b => {
         let pastBlocks = wallMesh.children.find(block =>block?.position.x === b[0] &&  block?.position.z === b[1])
         if(pastBlocks){
@@ -182,8 +177,8 @@ function checkAdjacentWalls(block) {
     return newBlocks
 }
 
-function generatePath(lastBlock,newBlocks, length){
-    let point = getRandomArbitrary(newBlocks.length - 1);
+function generatePath(lastBlock: THREE.Object3D ,newBlocks: Array<Array<number>>, length: number){
+    let point = getRandomArbitrary(newBlocks.length - 1);    
     let pointBlock = {
         x: lastBlock.name == 'initialBlock' ? newBlocks[0][0]: newBlocks[point][0],
         z: lastBlock.name == 'initialBlock' ? newBlocks[0][1]: newBlocks[point][1],
@@ -192,7 +187,7 @@ function generatePath(lastBlock,newBlocks, length){
    
 }
 
-function generateWalls(pathMesh, lastBlock, length){
+function generateWalls(pathMesh: Array<THREE.Object3D>, lastBlock:THREE.Object3D, length: number){
     //check the direction of the next and previous
     if(length > 0){
         let blockedWall =false;
@@ -212,7 +207,7 @@ function generateWalls(pathMesh, lastBlock, length){
         let posibleBlocks = checkAdjacentWalls(lastBlock)
         if(posibleBlocks){
             let a = false
-            let pastBlocks = []
+            let pastBlocks:Array<THREE.Object3D> = []
             posibleBlocks.forEach(b =>{
                 if(previousBlock.position.x == b[0] && previousBlock.position.z == b[1]){
                     a = true;
@@ -224,8 +219,6 @@ function generateWalls(pathMesh, lastBlock, length){
                 }
             })
             if(!a){
-                // console.log("Sin conexion con el anterior");
-                // console.log(pastBlocks);
                 if (pastBlocks.length > 0) {
                     blockedWall = true;
                     let point = getRandomArbitrary(pastBlocks.length - 1)
@@ -305,11 +298,11 @@ function generateWalls(pathMesh, lastBlock, length){
         }
         generateWallBlock(pointBlock, 'wall-' +wallCreated+ '-' + length, wallCreated);
         if(blockedWall){
-            removeBlockedWalls(previousBlock, lastBlock)
+            removeBlockedWalls(previousBlock)
         }
     } else {
         let directionWall = ''
-        if(lastBlock.position.x == 0.5 || lastBlock.position.x == (blocks-0.5)){
+        if(lastBlock.position.x == fixCoord || lastBlock.position.x == (blocks-fixCoord)){
             directionWall = 'straightHorizontal'
         } 
         else {
@@ -323,7 +316,7 @@ function generateWalls(pathMesh, lastBlock, length){
     }
 }
 
-function removeBlockedWalls(block) {
+function removeBlockedWalls(block: THREE.Object3D) {
     // console.log(block.name.includes('updated'));
     // if(block.name.includes('updated')){
     //     return;
@@ -359,42 +352,45 @@ function removeBlockedWalls(block) {
 }
 
 function setExternalWall() { 
-    let maxBlock = blocks-0.5
-    for(let i=0.5 ;i<= maxBlock; i++){
+    let maxBlock = sizeGrid-fixCoord
+    
+    for(let i=0 ;i < blocks;i++){
+        let log = i * sizeLab
+        let firstBlock = log + fixCoord
         let position =pathMesh.children[0].position
         let wallsCoord = [
             {
-                x: i,
-                z: blocks-0.5,
+                x: firstBlock,
+                z: maxBlock,
                 side: 'up',
                 nameWall: 'Wall-up-X-',
                 namePath: 'Block-X-',
             },
             {
-                x: i,
-                z: 0.5,
+                x: firstBlock,
+                z: fixCoord,
                 side: 'down',
                 nameWall: 'Wall-down-MirrorX-',
                 namePath: 'Block-MirrorX-',
             },
             {
-                x: blocks-0.5,
-                z: i,
+                x: maxBlock,
+                z: firstBlock,
                 side: 'left',
                 nameWall: 'Wall-left-Z-',
                 namePath: 'Block-Z-',
             },
             {
-                x: 0.5,
-                z: i,
+                x: fixCoord,
+                z: firstBlock,
                 side: 'right',
                 nameWall: 'Wall-right-MirrorZ-',
                 namePath: 'Block-MirrorZ-',
             }
         ]
-
+        
         wallsCoord.forEach(c =>{
-            if(!(c.x === position.x && c.z ===position.z)){
+            if(!(c.x === position.x && c.z ===position.z)){                
                 generatePathBlock(c, 'external'+ c.namePath +i )
                 generateWallBlock(c, 'external'+ c.nameWall + i, c.side);
             }
@@ -406,12 +402,9 @@ function setExternalWall() {
 function startMaze(){
     let lengthPath = pathMesh.children.length;
     let lengthWall = wallMesh.children.length
-    // if(lengthWall !== ((blocks - 2) * (blocks - 2) + 1)){
     if(lengthWall !== (blocks* blocks)){
-    // if(lengthPath !== ((blocks - 2) * (blocks - 2) + 1)){
-    // if(lengthPath <= 4){
         let foundBlock = false;
-        let index = lengthPath-1
+        let index = lengthPath-1        
         if(index !== 0){
             //if there is no more options go backwards and create new paths
             while (!foundBlock) {
@@ -429,16 +422,11 @@ function startMaze(){
                 }
             }
             if(lengthPath >= 2){
-                wallMesh.children.forEach(element => {
-                    let material =element.name.split('-')
-                    var cloned = createWallMesh(0x808080, material[1]);
-                    element.material = cloned;
-                });
                 generateWalls(pathMesh.children,pathMesh.children[lengthPath-2], lengthPath-2)
             }
             
         } else {
-            let posibleBlocks = generatePosibleBlocks(pathMesh.children[index])
+            let posibleBlocks = generatePosibleBlocks(pathMesh.children[index])            
             generatePath(pathMesh.children[index],posibleBlocks, lengthPath)
         }
     } else {
@@ -450,11 +438,11 @@ function startMaze(){
 
 insertInitialPoint();
 var time = 10
-var refreshIntervalId
+var refreshIntervalId: number | undefined;
 function toggleInterval() { 
     if(refreshIntervalId){ 
         clearInterval(refreshIntervalId);
-        refreshIntervalId = null;
+        refreshIntervalId = undefined;
     } else {
         refreshIntervalId = setInterval(function(){
             if(wallMesh.children.length !== (blocks* blocks)){
@@ -471,14 +459,11 @@ function toggleInterval() {
 
 toggleInterval()
 document.body.appendChild( renderer.domElement );
-function animate() {
-	renderer.render( scene, camera );
-}  
-
+let camera: THREE.PerspectiveCamera;
 window.addEventListener('resize', function () {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight)  
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight)  
 })
 
 window.addEventListener('keydown', function (e) {
@@ -487,18 +472,166 @@ window.addEventListener('keydown', function (e) {
     }
     
 })
+
 const raycaster = new THREE.Raycaster();
-const pointer = new THREE.Vector2();
-let intersects = [];
-window.addEventListener('click', function (e) {
-    pointer.x = ( e.clientX / window.innerWidth ) * 2 - 1;
-    pointer.y = - ( e.clientY / window.innerHeight ) * 2 + 1;
-    raycaster.setFromCamera( pointer, camera );
-    intersects = raycaster.intersectObjects(scene.children, true);
-    if (intersects.length > 0){
-        let i0 = intersects[0];
-        console.log(i0.object);
-    }
+const gravity = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, 10 );
+
+let controls;
+
+
+
+// var controls: PointerLockControls;
+let prevTime = performance.now();
+const velocity = new THREE.Vector3();
+const direction = new THREE.Vector3();
+const objects: THREE.Object3D<THREE.Event>[] = [];
+
+let moveForward = false;
+let moveBackward = false;
+let moveLeft = false;
+let moveRight = false;
+let canJump = false;
+
+function initFirstPersonCamera(){
+                camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1000 );
+                camera.position.set(pathMesh.children[0].position.x, fixCoord, pathMesh.children[0].position.z)
+				// camera.position.y = 10;
+				const light = new THREE.HemisphereLight( 0xeeeeff, 0x777788, 2.5 );
+				light.position.set( 0.5, 1, 0.75 );
+				scene.add( light );
+                controls = new OrbitControls(camera, renderer.domElement);
+                controls.target.set(blocks/2,0,blocks/2);
+                // these two values basically smooth the movement animation
+                controls.dampingFactor = 0.05;
+                controls.enableDamping = true;
+				// controls = new PointerLockControls( camera, document.body );
+                
+				// document.addEventListener( 'click', function () {
+
+				// 	controls.lock();
+
+				// } );
+				// scene.add( controls.getObject() );
+
+				const onKeyDown = function ( event: KeyboardEvent ) {
+
+					switch ( event.code ) {
+
+						case 'ArrowUp':
+						case 'KeyW':
+							moveForward = true;
+							break;
+
+						case 'ArrowLeft':
+						case 'KeyA':
+							moveLeft = true;
+							break;
+
+						case 'ArrowDown':
+						case 'KeyS':
+							moveBackward = true;
+							break;
+
+						case 'ArrowRight':
+						case 'KeyD':
+							moveRight = true;
+							break;
+
+						case 'Space':
+							if ( canJump === true ) velocity.y += 350;
+							canJump = false;
+							break;
+
+					}
+
+				};
+
+				const onKeyUp = function ( event: KeyboardEvent ) {
+
+					switch ( event.code ) {
+
+						case 'ArrowUp':
+						case 'KeyW':
+							moveForward = false;
+							break;
+
+						case 'ArrowLeft':
+						case 'KeyA':
+							moveLeft = false;
+							break;
+
+						case 'ArrowDown':
+						case 'KeyS':
+							moveBackward = false;
+							break;
+
+						case 'ArrowRight':
+						case 'KeyD':
+							moveRight = false;
+							break;
+
+					}
+
+				};
+
+				document.addEventListener( 'keydown', onKeyDown );
+				document.addEventListener( 'keyup', onKeyUp );
+}
+
+initFirstPersonCamera();
+function animate() {
     
-})
-renderer.setAnimationLoop(animate)
+    requestAnimationFrame( animate );
+
+				// const time = performance.now();
+
+				
+                // gravity.ray.origin.copy( controls.getObject().position );
+                // gravity.ray.origin.y -= 10;
+
+                // const intersections = gravity.intersectObjects( objects, false );
+                // // const wall = 
+                // // console.log(intersections);
+    
+                // const onObject = intersections.length > 0;
+
+                // const delta = ( time - prevTime ) / 5000;
+
+                // velocity.x -= velocity.x * 10.0 * delta;
+                // velocity.z -= velocity.z * 10.0 * delta;
+
+                // velocity.y -= 9.8 * 750.0 * delta; // 100.0 = mass
+
+                // direction.z = Number( moveForward ) - Number( moveBackward );
+                // direction.x = Number( moveRight ) - Number( moveLeft );
+                // direction.normalize(); // this ensures consistent movements in all directions
+
+                // if ( moveForward || moveBackward ) velocity.z -= direction.z * 400.0 * delta;
+                // if ( moveLeft || moveRight ) velocity.x -= direction.x * 400.0 * delta;
+
+                // if ( onObject === true ) {
+
+                //     velocity.y = Math.max( 0, velocity.y );
+                //     canJump = true;
+
+                // }
+
+                // controls.moveRight( - velocity.x * delta );
+                // controls.moveForward( - velocity.z * delta );
+
+                // controls.getObject().position.y += ( velocity.y * delta ); // new behavior
+                
+                // if ( controls.getObject().position.y < 0.5 ) {
+
+                //     velocity.y = 0.5;
+                //     controls.getObject().position.y = 0.5;
+
+                //     canJump = true;
+
+                // }
+
+				// prevTime = time;
+                renderer.render( scene, camera );
+}  
+// renderer.setAnimationLoop(animate)
+animate();
