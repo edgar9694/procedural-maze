@@ -498,7 +498,6 @@ function initFirstPersonCamera() {
     });
     scene.add(controls.getObject());
     const onKeyDown = function (event) {
-        console.log(event.code);
         switch (event.code) {
             case 'ArrowUp':
             case 'KeyW':
@@ -562,11 +561,10 @@ function animate() {
     // const wall = 
     // console.log(intersections);
     const onObject = intersections.length > 0;
-    console.log(500 * Number(run), Number(run));
     const delta = (time - prevTime) / (1500 - (700 * Number(run)));
     velocity.x -= velocity.x * 10.0 * delta;
     velocity.z -= velocity.z * 10.0 * delta;
-    velocity.y -= 9.8 * 750.0 * delta; // 100.0 = mass
+    velocity.y -= 9.8 * 500.0 * delta; // 100.0 = mass
     direction.z = Number(moveForward) - Number(moveBackward);
     direction.x = Number(moveRight) - Number(moveLeft);
     direction.normalize(); // this ensures consistent movements in all directions
