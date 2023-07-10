@@ -34,8 +34,8 @@ const scene = new THREE.Scene();
 // const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1000 );
 // camera.position.y = 10;
 // camera.position.set(9, 31, -5);
-let blocks = 30; //number of blocks of the grid
-let sizeLab = 30;
+let blocks = 20; //number of blocks of the grid
+let sizeLab = 20; //trying a solution to implement sizeLab diferent to blocks number
 let fixCoord = (blocks / 2);
 let planePosition = (blocks * sizeLab / 2); //+ 0.5;
 let sizeGrid = blocks * sizeLab;
