@@ -9,8 +9,8 @@ renderer.setSize( window.innerWidth, window.innerHeight );
 
 
 const scene = new THREE.Scene();
-// scene.background = new THREE.Color(0xa8def0)
-// scene.fog = new THREE.Fog(0xffffff, 0, 750);
+scene.background = new THREE.Color(0xa8def0)
+scene.fog = new THREE.Fog(0xffffff, 0, 750);
 
 // const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1000 );
 // camera.position.y = 10;
@@ -476,8 +476,8 @@ window.addEventListener('keydown', function (e) {
 const raycaster = new THREE.Raycaster();
 const gravity = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, 10 );
 
-let controls;
-
+// let controls: OrbitControls;
+let controls: PointerLockControls;
 
 
 // var controls: PointerLockControls;
@@ -495,23 +495,26 @@ let canJump = false;
 function initFirstPersonCamera(){
                 camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
                 camera.position.set(pathMesh.children[0].position.x, fixCoord, pathMesh.children[0].position.z)
-				// camera.position.y = 10;
-				// const light = new THREE.HemisphereLight( 0xeeeeff, 0x777788, 2.5 );
-				// light.position.set( 0.5, 1, 0.75 );
-				// scene.add( light );
-                controls = new OrbitControls(camera, renderer.domElement);
-                controls.target.set(sizeGrid/2,0,sizeGrid/2);
-                // these two values basically smooth the movement animation
-                controls.dampingFactor = 0.05;
-                controls.enableDamping = true;
-				// controls = new PointerLockControls( camera, document.body );
+				camera.position.y = 10;
+				const light = new THREE.HemisphereLight( 0xeeeeff, 0x777788, 2.5 );
+				light.position.set( 0.5, 1, 0.75 );
+				scene.add( light );
+                //orbitControls to check the maze
+                // controls = new OrbitControls(camera, renderer.domElement);
+                // controls.target.set(sizeGrid/2,0,sizeGrid/2);
+                // // these two values basically smooth the movement animation
+                // controls.dampingFactor = 0.05;
+                // controls.enableDamping = true;
+
+                // first Person Camera Controls
+				controls = new PointerLockControls( camera, document.body );
                 
-				// document.addEventListener( 'click', function () {
+				document.addEventListener( 'click', function () {
 
-				// 	controls.lock();
+					controls.lock();
 
-				// } );
-				// scene.add( controls.getObject() );
+				} );
+				scene.add( controls.getObject() );
 
 				const onKeyDown = function ( event: KeyboardEvent ) {
 
@@ -583,54 +586,54 @@ function animate() {
     
     requestAnimationFrame( animate );
 
-				// const time = performance.now();
+				const time = performance.now();
 
 				
-                // gravity.ray.origin.copy( controls.getObject().position );
-                // gravity.ray.origin.y -= 10;
+                gravity.ray.origin.copy( controls.getObject().position );
+                gravity.ray.origin.y -= blocks / 2;
 
-                // const intersections = gravity.intersectObjects( objects, false );
-                // // const wall = 
-                // // console.log(intersections);
+                const intersections = gravity.intersectObjects( objects, false );
+                // const wall = 
+                // console.log(intersections);
     
-                // const onObject = intersections.length > 0;
+                const onObject = intersections.length > 0;
 
-                // const delta = ( time - prevTime ) / 5000;
+                const delta = ( time - prevTime ) / 3000;
 
-                // velocity.x -= velocity.x * 10.0 * delta;
-                // velocity.z -= velocity.z * 10.0 * delta;
+                velocity.x -= velocity.x * 10.0 * delta;
+                velocity.z -= velocity.z * 10.0 * delta;
 
-                // velocity.y -= 9.8 * 750.0 * delta; // 100.0 = mass
+                velocity.y -= 9.8 * 750.0 * delta; // 100.0 = mass
 
-                // direction.z = Number( moveForward ) - Number( moveBackward );
-                // direction.x = Number( moveRight ) - Number( moveLeft );
-                // direction.normalize(); // this ensures consistent movements in all directions
+                direction.z = Number( moveForward ) - Number( moveBackward );
+                direction.x = Number( moveRight ) - Number( moveLeft );
+                direction.normalize(); // this ensures consistent movements in all directions
 
-                // if ( moveForward || moveBackward ) velocity.z -= direction.z * 400.0 * delta;
-                // if ( moveLeft || moveRight ) velocity.x -= direction.x * 400.0 * delta;
+                if ( moveForward || moveBackward ) velocity.z -= direction.z * 400.0 * delta;
+                if ( moveLeft || moveRight ) velocity.x -= direction.x * 400.0 * delta;
 
-                // if ( onObject === true ) {
+                if ( onObject === true ) {
 
-                //     velocity.y = Math.max( 0, velocity.y );
-                //     canJump = true;
+                    velocity.y = Math.max( 0, velocity.y );
+                    canJump = true;
 
-                // }
+                }
 
-                // controls.moveRight( - velocity.x * delta );
-                // controls.moveForward( - velocity.z * delta );
+                controls.moveRight( - velocity.x * delta );
+                controls.moveForward( - velocity.z * delta );
 
-                // controls.getObject().position.y += ( velocity.y * delta ); // new behavior
+                controls.getObject().position.y += ( velocity.y * delta ); // new behavior
                 
-                // if ( controls.getObject().position.y < 0.5 ) {
+                if ( controls.getObject().position.y < blocks / 2 ) {
 
-                //     velocity.y = 0.5;
-                //     controls.getObject().position.y = 0.5;
+                    velocity.y = blocks / 2;
+                    controls.getObject().position.y = blocks / 2;
 
-                //     canJump = true;
+                    canJump = true;
 
-                // }
+                }
 
-				// prevTime = time;
+				prevTime = time;
                 renderer.render( scene, camera );
 }  
 // renderer.setAnimationLoop(animate)

@@ -24,13 +24,13 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const THREE = __importStar(require("three"));
-const OrbitControls_js_1 = require("three/examples/jsm/controls/OrbitControls.js");
+const PointerLockControls_1 = require("three/examples/jsm/controls/PointerLockControls");
 // import * as firstPerson from "./first-person";
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 const scene = new THREE.Scene();
-// scene.background = new THREE.Color(0xa8def0)
-// scene.fog = new THREE.Fog(0xffffff, 0, 750);
+scene.background = new THREE.Color(0xa8def0);
+scene.fog = new THREE.Fog(0xffffff, 0, 750);
 // const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1000 );
 // camera.position.y = 10;
 // camera.position.set(9, 31, -5);
@@ -465,6 +465,7 @@ window.addEventListener('keydown', function (e) {
 });
 const raycaster = new THREE.Raycaster();
 const gravity = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, -1, 0), 0, 10);
+// let controls: OrbitControls;
 let controls;
 // var controls: PointerLockControls;
 let prevTime = performance.now();
@@ -479,20 +480,22 @@ let canJump = false;
 function initFirstPersonCamera() {
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set(pathMesh.children[0].position.x, fixCoord, pathMesh.children[0].position.z);
-    // camera.position.y = 10;
-    // const light = new THREE.HemisphereLight( 0xeeeeff, 0x777788, 2.5 );
-    // light.position.set( 0.5, 1, 0.75 );
-    // scene.add( light );
-    controls = new OrbitControls_js_1.OrbitControls(camera, renderer.domElement);
-    controls.target.set(sizeGrid / 2, 0, sizeGrid / 2);
-    // these two values basically smooth the movement animation
-    controls.dampingFactor = 0.05;
-    controls.enableDamping = true;
-    // controls = new PointerLockControls( camera, document.body );
-    // document.addEventListener( 'click', function () {
-    // 	controls.lock();
-    // } );
-    // scene.add( controls.getObject() );
+    camera.position.y = 10;
+    const light = new THREE.HemisphereLight(0xeeeeff, 0x777788, 2.5);
+    light.position.set(0.5, 1, 0.75);
+    scene.add(light);
+    //orbitControls to check the maze
+    // controls = new OrbitControls(camera, renderer.domElement);
+    // controls.target.set(sizeGrid/2,0,sizeGrid/2);
+    // // these two values basically smooth the movement animation
+    // controls.dampingFactor = 0.05;
+    // controls.enableDamping = true;
+    // first Person Camera Controls
+    controls = new PointerLockControls_1.PointerLockControls(camera, document.body);
+    document.addEventListener('click', function () {
+        controls.lock();
+    });
+    scene.add(controls.getObject());
     const onKeyDown = function (event) {
         switch (event.code) {
             case 'ArrowUp':
@@ -544,35 +547,37 @@ function initFirstPersonCamera() {
 initFirstPersonCamera();
 function animate() {
     requestAnimationFrame(animate);
-    // const time = performance.now();
-    // gravity.ray.origin.copy( controls.getObject().position );
-    // gravity.ray.origin.y -= 10;
-    // const intersections = gravity.intersectObjects( objects, false );
-    // // const wall = 
-    // // console.log(intersections);
-    // const onObject = intersections.length > 0;
-    // const delta = ( time - prevTime ) / 5000;
-    // velocity.x -= velocity.x * 10.0 * delta;
-    // velocity.z -= velocity.z * 10.0 * delta;
-    // velocity.y -= 9.8 * 750.0 * delta; // 100.0 = mass
-    // direction.z = Number( moveForward ) - Number( moveBackward );
-    // direction.x = Number( moveRight ) - Number( moveLeft );
-    // direction.normalize(); // this ensures consistent movements in all directions
-    // if ( moveForward || moveBackward ) velocity.z -= direction.z * 400.0 * delta;
-    // if ( moveLeft || moveRight ) velocity.x -= direction.x * 400.0 * delta;
-    // if ( onObject === true ) {
-    //     velocity.y = Math.max( 0, velocity.y );
-    //     canJump = true;
-    // }
-    // controls.moveRight( - velocity.x * delta );
-    // controls.moveForward( - velocity.z * delta );
-    // controls.getObject().position.y += ( velocity.y * delta ); // new behavior
-    // if ( controls.getObject().position.y < 0.5 ) {
-    //     velocity.y = 0.5;
-    //     controls.getObject().position.y = 0.5;
-    //     canJump = true;
-    // }
-    // prevTime = time;
+    const time = performance.now();
+    gravity.ray.origin.copy(controls.getObject().position);
+    gravity.ray.origin.y -= blocks / 2;
+    const intersections = gravity.intersectObjects(objects, false);
+    // const wall = 
+    // console.log(intersections);
+    const onObject = intersections.length > 0;
+    const delta = (time - prevTime) / 3000;
+    velocity.x -= velocity.x * 10.0 * delta;
+    velocity.z -= velocity.z * 10.0 * delta;
+    velocity.y -= 9.8 * 750.0 * delta; // 100.0 = mass
+    direction.z = Number(moveForward) - Number(moveBackward);
+    direction.x = Number(moveRight) - Number(moveLeft);
+    direction.normalize(); // this ensures consistent movements in all directions
+    if (moveForward || moveBackward)
+        velocity.z -= direction.z * 400.0 * delta;
+    if (moveLeft || moveRight)
+        velocity.x -= direction.x * 400.0 * delta;
+    if (onObject === true) {
+        velocity.y = Math.max(0, velocity.y);
+        canJump = true;
+    }
+    controls.moveRight(-velocity.x * delta);
+    controls.moveForward(-velocity.z * delta);
+    controls.getObject().position.y += (velocity.y * delta); // new behavior
+    if (controls.getObject().position.y < blocks / 2) {
+        velocity.y = blocks / 2;
+        controls.getObject().position.y = blocks / 2;
+        canJump = true;
+    }
+    prevTime = time;
     renderer.render(scene, camera);
 }
 // renderer.setAnimationLoop(animate)
