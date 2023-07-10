@@ -9,19 +9,19 @@ renderer.setSize( window.innerWidth, window.innerHeight );
 
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xa8def0)
-scene.fog = new THREE.Fog(0xffffff, 0, 750);
+// scene.background = new THREE.Color(0xa8def0)
+// scene.fog = new THREE.Fog(0xffffff, 0, 750);
 
 // const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1000 );
 // camera.position.y = 10;
 // camera.position.set(9, 31, -5);
-let blocks = 20;
-let sizeLab = 20;
+let blocks = 30; //number of blocks of the grid
+let sizeLab = 30;
 
 
 let fixCoord = (blocks/2);
-let planePosition = blocks == sizeLab ? (blocks*sizeLab/2) : (blocks*sizeLab/2) //+ 0.5;
-let sizeGrid =blocks == sizeLab ?  blocks * sizeLab: blocks* blocks;
+let planePosition = (blocks*sizeLab/2); //+ 0.5;
+let sizeGrid = blocks * sizeLab;
 const grid = new THREE.GridHelper(sizeGrid, sizeLab);
 grid.position.set(planePosition,0,planePosition)
 scene.add(grid);
@@ -493,14 +493,14 @@ let moveRight = false;
 let canJump = false;
 
 function initFirstPersonCamera(){
-                camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1000 );
+                camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
                 camera.position.set(pathMesh.children[0].position.x, fixCoord, pathMesh.children[0].position.z)
 				// camera.position.y = 10;
-				const light = new THREE.HemisphereLight( 0xeeeeff, 0x777788, 2.5 );
-				light.position.set( 0.5, 1, 0.75 );
-				scene.add( light );
+				// const light = new THREE.HemisphereLight( 0xeeeeff, 0x777788, 2.5 );
+				// light.position.set( 0.5, 1, 0.75 );
+				// scene.add( light );
                 controls = new OrbitControls(camera, renderer.domElement);
-                controls.target.set(blocks/2,0,blocks/2);
+                controls.target.set(sizeGrid/2,0,sizeGrid/2);
                 // these two values basically smooth the movement animation
                 controls.dampingFactor = 0.05;
                 controls.enableDamping = true;
