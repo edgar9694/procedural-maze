@@ -491,6 +491,7 @@ let moveBackward = false;
 let moveLeft = false;
 let moveRight = false;
 let canJump = false;
+let run = false;
 
 function initFirstPersonCamera(){
                 camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
@@ -517,7 +518,8 @@ function initFirstPersonCamera(){
 				scene.add( controls.getObject() );
 
 				const onKeyDown = function ( event: KeyboardEvent ) {
-
+                    console.log(event.code);
+                    
 					switch ( event.code ) {
 
 						case 'ArrowUp':
@@ -539,7 +541,9 @@ function initFirstPersonCamera(){
 						case 'KeyD':
 							moveRight = true;
 							break;
-
+                        case 'ShiftLeft':
+                            run = true;
+							break;
 						case 'Space':
 							if ( canJump === true ) velocity.y += 350;
 							canJump = false;
@@ -572,6 +576,9 @@ function initFirstPersonCamera(){
 						case 'KeyD':
 							moveRight = false;
 							break;
+                        case 'ShiftLeft':
+                            run = false;
+                            break;
 
 					}
 
@@ -597,12 +604,13 @@ function animate() {
                 // console.log(intersections);
     
                 const onObject = intersections.length > 0;
-
-                const delta = ( time - prevTime ) / 3000;
+                console.log(500*Number(run), Number(run));
+    
+                const delta = ( time - prevTime ) / (1500 - (700*Number(run)));
 
                 velocity.x -= velocity.x * 10.0 * delta;
                 velocity.z -= velocity.z * 10.0 * delta;
-
+    
                 velocity.y -= 9.8 * 750.0 * delta; // 100.0 = mass
 
                 direction.z = Number( moveForward ) - Number( moveBackward );

@@ -477,6 +477,7 @@ let moveBackward = false;
 let moveLeft = false;
 let moveRight = false;
 let canJump = false;
+let run = false;
 function initFirstPersonCamera() {
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set(pathMesh.children[0].position.x, fixCoord, pathMesh.children[0].position.z);
@@ -497,6 +498,7 @@ function initFirstPersonCamera() {
     });
     scene.add(controls.getObject());
     const onKeyDown = function (event) {
+        console.log(event.code);
         switch (event.code) {
             case 'ArrowUp':
             case 'KeyW':
@@ -513,6 +515,9 @@ function initFirstPersonCamera() {
             case 'ArrowRight':
             case 'KeyD':
                 moveRight = true;
+                break;
+            case 'ShiftLeft':
+                run = true;
                 break;
             case 'Space':
                 if (canJump === true)
@@ -539,6 +544,9 @@ function initFirstPersonCamera() {
             case 'KeyD':
                 moveRight = false;
                 break;
+            case 'ShiftLeft':
+                run = false;
+                break;
         }
     };
     document.addEventListener('keydown', onKeyDown);
@@ -554,7 +562,8 @@ function animate() {
     // const wall = 
     // console.log(intersections);
     const onObject = intersections.length > 0;
-    const delta = (time - prevTime) / 3000;
+    console.log(500 * Number(run), Number(run));
+    const delta = (time - prevTime) / (1500 - (700 * Number(run)));
     velocity.x -= velocity.x * 10.0 * delta;
     velocity.z -= velocity.z * 10.0 * delta;
     velocity.y -= 9.8 * 750.0 * delta; // 100.0 = mass
