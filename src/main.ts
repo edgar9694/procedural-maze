@@ -1,9 +1,7 @@
 import *  as THREE from 'three';
-import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls';
-import { OrbitControls  } from 'three/examples/jsm/controls/OrbitControls.js';
 
+import * as mazeGenerator from "./maze-generator";
 import * as firstPerson from "./first-person";
-import * as mazeGenerator from "./maze-generator"
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
@@ -18,8 +16,6 @@ const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.inner
 let blocks = 20; //number of blocks of the grid
 let sizeLab = 20; //trying a solution to implement sizeLab diferent to blocks number
 
-
-let fixCoord = (blocks/2);
 let planePosition = (blocks*sizeLab/2); //+ 0.5;
 let sizeGrid = blocks * sizeLab;
 const grid = new THREE.GridHelper(sizeGrid, sizeLab);
@@ -41,9 +37,6 @@ hightlightMesh.position.set(planePosition,0,planePosition)
 const axesHelper = new THREE.AxesHelper( sizeLab );
 scene.add( axesHelper );
 
-function createMesh(color:any){
-    return new THREE.MeshBasicMaterial({ color: color });
-}
 
 var time = 10;
 var refreshIntervalId: number | undefined;
@@ -98,8 +91,8 @@ const firstPersonCamera = new firstPerson.FirstPersonCamera(
     maze.fixCoord,
     maze.wallGroupMesh[0].position
 );
-// firstPersonCamera.firstPersonView = false;
-firstPersonCamera.initFirstPersonCamera();
+firstPersonCamera.firstPersonView = false;
+// firstPersonCamera;
 
 toggleInterval()
 

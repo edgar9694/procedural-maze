@@ -1,31 +1,6 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const THREE = __importStar(require("three"));
-const firstPerson = __importStar(require("./first-person"));
-const mazeGenerator = __importStar(require("./maze-generator"));
+import * as THREE from 'three';
+import * as mazeGenerator from "./maze-generator";
+import * as firstPerson from "./first-person";
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 const scene = new THREE.Scene();
@@ -34,7 +9,6 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
 let blocks = 20; //number of blocks of the grid
 let sizeLab = 20; //trying a solution to implement sizeLab diferent to blocks number
-let fixCoord = (blocks / 2);
 let planePosition = (blocks * sizeLab / 2); //+ 0.5;
 let sizeGrid = blocks * sizeLab;
 const grid = new THREE.GridHelper(sizeGrid, sizeLab);
@@ -49,9 +23,6 @@ hightlightMesh.position.set(planePosition, 0, planePosition);
 // scene.add( hightlightMesh );
 const axesHelper = new THREE.AxesHelper(sizeLab);
 scene.add(axesHelper);
-function createMesh(color) {
-    return new THREE.MeshBasicMaterial({ color: color });
-}
 var time = 10;
 var refreshIntervalId;
 /**
@@ -94,8 +65,8 @@ scene.add(maze.referenceCone);
  * add FirsPersonCamera
  */
 const firstPersonCamera = new firstPerson.FirstPersonCamera(camera, scene, renderer, maze.sizeGrid, maze.blocks, maze.fixCoord, maze.wallGroupMesh[0].position);
-// firstPersonCamera.firstPersonView = false;
-firstPersonCamera.initFirstPersonCamera();
+firstPersonCamera.firstPersonView = false;
+// firstPersonCamera;
 toggleInterval();
 function animate() {
     requestAnimationFrame(animate);
