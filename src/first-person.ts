@@ -1,11 +1,12 @@
 import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls';
 
 export class FirstPersonCamera {
 
-    public controls!: PointerLockControls;
+    public controls!: PointerLockControls | OrbitControls;
     public firstPersonView: boolean = false;
-    public light!: THREE.HemisphereLight;
+    public light!: THREE.HemisphereLight |  THREE.AmbientLight;
     public prevTime = performance.now();
     public velocity = new THREE.Vector3();
     public direction = new THREE.Vector3();
@@ -31,7 +32,7 @@ export class FirstPersonCamera {
     public firstPosition: {x: number, y: number, z:number}
 
     constructor(camera: THREE.PerspectiveCamera, scene: THREE.Scene, renderer: THREE.WebGLRenderer, sizeGrid: number, blocks: number, fixCoord: number, firstPosition : {x: number, y: number, z:number}){
-        this.camera = camera;
+        this.camera = camera;        
         this.scene = scene;
         this.renderer = renderer;
         this.sizeGrid = sizeGrid;
@@ -42,7 +43,7 @@ export class FirstPersonCamera {
     }
 
 
-    switchTypeofCamera(){
+    switchTypeofCamera(){        
         if(this.firstPersonView){
             this.camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
             this.camera.position.y = 10;
@@ -52,27 +53,35 @@ export class FirstPersonCamera {
             this.camera.position.set(this.firstPosition.x, this.firstPosition.y, this.firstPosition.z)
             this.controls = new PointerLockControls(this.camera, document.body );
             document.addEventListener( 'click', () => {
-                this.controls.lock();
+                (this.controls as PointerLockControls).lock();
             } );
-        } else {
+        } else {            
             //isometric view to check the maze
             const aspect = window.innerWidth / window.innerHeight;            
             const d = 350;
             this.camera = new THREE.OrthographicCamera( - d * aspect, d * aspect, d, - d, 1, 1000 );
+            // this.camera = new THREE.OrthographicCamera( aspect / - 2, aspect / 2, aspect / 2, aspect / - 2, 1, 1000  );
             // this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000 );
+            this.controls = new OrbitControls(this.camera,this.renderer.domElement);
             this.camera.position.set(500, 500, 500);
-            let planePosition = (this.fixCoord * this.blocks)/2
-            this.camera.lookAt(planePosition, 0, planePosition)
+            // these two values basically smooth the movement animation
+            this.controls.dampingFactor = 0.05;
+            this.controls.enableDamping = true;
+            // let planePosition = (this.fixCoord * this.blocks)/2
+            // this.camera.lookAt(planePosition, 0, planePosition)
+            this.controls.target.set(this.fixCoord * this.blocks, 0, this.fixCoord * this.blocks);
+
         }
     }
 
     initFirstPersonCamera(){
         this.light = new THREE.HemisphereLight( 0xeeeeff, 0x777788, 2.5 );
-        this.light.position.set( 0.5, 1, 0.75 );
+        // this.light.position.set( 0.5, 1, 0.75 );
+        // this.light = new THREE.AmbientLight(0xffffff, 0.5);
         this.scene.add( this.light );
         this.switchTypeofCamera()
         if(this.firstPersonView){            
-            this.scene.add( this.controls.getObject() );
+            this.scene.add( (this.controls as PointerLockControls).getObject() );
             const onKeyDown = ( event: KeyboardEvent ) => {                    
                 switch ( event.code ) {
     
@@ -143,11 +152,12 @@ export class FirstPersonCamera {
         }   
     }
 
-
     animateMovement(){
         const time = performance.now();
         if(this.firstPersonView){
-               this.gravity.ray.origin.copy( this.controls.getObject().position );
+            console.log(this.controls);
+            
+               this.gravity.ray.origin.copy( (this.controls as PointerLockControls).getObject().position );
                this.gravity.ray.origin.y -= this.blocks / 2;
 
                 const intersections = this.gravity.intersectObjects( this.objects, false );
@@ -177,21 +187,32 @@ export class FirstPersonCamera {
 
                 }
 
-                this.controls.moveRight( - this.velocity.x * delta );
-                this.controls.moveForward( - this.velocity.z * delta );
+                (this.controls as PointerLockControls).moveRight( - this.velocity.x * delta );
+                (this.controls as PointerLockControls).moveForward( - this.velocity.z * delta );
 
-                this.controls.getObject().position.y += ( this.velocity.y * delta ); // new behavior
+                (this.controls as PointerLockControls).getObject().position.y += ( this.velocity.y * delta ); // new behavior
                 
-                if ( this.controls.getObject().position.y < this.blocks / 2 ) {
+                if ( (this.controls as PointerLockControls).getObject().position.y < this.blocks / 2 ) {
 
                     this.velocity.y = this.blocks / 2;
-                    this.controls.getObject().position.y = this.blocks / 2;
+                    (this.controls as PointerLockControls).getObject().position.y = this.blocks / 2;
 
                     this.canJump = true;
 
                 }
                 this.prevTime = time;
 
-        }		
+        }		else {
+            (this.controls as OrbitControls).update()
+        }
+    }
+
+    toggleFirstPerson(value: boolean){
+        if(value !== undefined){
+            this.firstPersonView = value
+        } else {
+            this.firstPersonView = !this.firstPersonView;
+        }
+        this.initFirstPersonCamera();
     }
 }

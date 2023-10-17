@@ -65,7 +65,7 @@ scene.add(maze.referenceCone);
  * add FirsPersonCamera
  */
 const firstPersonCamera = new firstPerson.FirstPersonCamera(camera, scene, renderer, maze.sizeGrid, maze.blocks, maze.fixCoord, maze.wallGroupMesh[0].position);
-firstPersonCamera.firstPersonView = false;
+firstPersonCamera.toggleFirstPerson(false);
 // firstPersonCamera;
 toggleInterval();
 function animate() {

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls';
 export class FirstPersonCamera {
     constructor(camera, scene, renderer, sizeGrid, blocks, fixCoord, firstPosition) {
@@ -42,15 +43,22 @@ export class FirstPersonCamera {
             const aspect = window.innerWidth / window.innerHeight;
             const d = 350;
             this.camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 1, 1000);
+            // this.camera = new THREE.OrthographicCamera( aspect / - 2, aspect / 2, aspect / 2, aspect / - 2, 1, 1000  );
             // this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000 );
+            this.controls = new OrbitControls(this.camera, this.renderer.domElement);
             this.camera.position.set(500, 500, 500);
-            let planePosition = (this.fixCoord * this.blocks) / 2;
-            this.camera.lookAt(planePosition, 0, planePosition);
+            // these two values basically smooth the movement animation
+            this.controls.dampingFactor = 0.05;
+            this.controls.enableDamping = true;
+            // let planePosition = (this.fixCoord * this.blocks)/2
+            // this.camera.lookAt(planePosition, 0, planePosition)
+            this.controls.target.set(this.fixCoord * this.blocks, 0, this.fixCoord * this.blocks);
         }
     }
     initFirstPersonCamera() {
         this.light = new THREE.HemisphereLight(0xeeeeff, 0x777788, 2.5);
-        this.light.position.set(0.5, 1, 0.75);
+        // this.light.position.set( 0.5, 1, 0.75 );
+        // this.light = new THREE.AmbientLight(0xffffff, 0.5);
         this.scene.add(this.light);
         this.switchTypeofCamera();
         if (this.firstPersonView) {
@@ -113,6 +121,7 @@ export class FirstPersonCamera {
     animateMovement() {
         const time = performance.now();
         if (this.firstPersonView) {
+            console.log(this.controls);
             this.gravity.ray.origin.copy(this.controls.getObject().position);
             this.gravity.ray.origin.y -= this.blocks / 2;
             const intersections = this.gravity.intersectObjects(this.objects, false);
@@ -144,5 +153,17 @@ export class FirstPersonCamera {
             }
             this.prevTime = time;
         }
+        else {
+            this.controls.update();
+        }
+    }
+    toggleFirstPerson(value) {
+        if (value !== undefined) {
+            this.firstPersonView = value;
+        }
+        else {
+            this.firstPersonView = !this.firstPersonView;
+        }
+        this.initFirstPersonCamera();
     }
 }

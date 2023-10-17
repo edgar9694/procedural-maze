@@ -91,7 +91,7 @@ const firstPersonCamera = new firstPerson.FirstPersonCamera(
     maze.fixCoord,
     maze.wallGroupMesh[0].position
 );
-firstPersonCamera.firstPersonView = false;
+firstPersonCamera.toggleFirstPerson(false)
 // firstPersonCamera;
 
 toggleInterval()
